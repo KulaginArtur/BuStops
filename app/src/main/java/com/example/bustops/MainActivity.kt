@@ -22,6 +22,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.gson.GsonBuilder
 import okhttp3.*
 import java.io.IOException
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
 
     private lateinit var map: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
     private lateinit var lastLocation: Location
 
     private lateinit var locationCallback: LocationCallback
