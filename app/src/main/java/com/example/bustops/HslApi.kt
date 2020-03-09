@@ -8,7 +8,7 @@ import retrofit2.http.POST
 interface HslApi {
 
     @POST("routing/v1/routers/hsl/index/graphql")
-    @Headers("Content-Type: application/graphql")
+    @Headers("Content-Type: application/json")
     fun sentStopData(
         @Body stopPost: String
     ):Call<String>

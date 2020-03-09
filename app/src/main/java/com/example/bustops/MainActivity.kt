@@ -4,36 +4,27 @@ import android.app.Activity
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
-import android.location.Geocoder
 import android.location.Location
-import android.location.Address
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentTransaction
-import com.example.bustops.model.StopPost
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.*
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.io.IOException
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    lateinit var homeFragment: HomeFragment
     lateinit var arFragment: ArFragment
     lateinit var settingsFragment: SettingsFragment
     private lateinit var mMap: GoogleMap
@@ -48,21 +39,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         private const val REQUEST_CHECK_SETTINGS = 3
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         btm_nav.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
-
-                R.id.home -> {
-                    supportFragmentManager
-                        .beginTransaction()
-                        .replace(R.id.frame_layout, homeFragment)
-                        .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                        .commit()
-                }
                 R.id.ar -> {
                     arFragment = ArFragment()
                     supportFragmentManager
@@ -90,9 +72,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
-
-
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -166,40 +145,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    /* private fun placeMarkerOnMap(location: LatLng) {
-        val markerOptions = MarkerOptions().position(location)
-            .title(getAddress(location))
-        /*markerOptions.icon(BitmapDescriptorFactory.fromBitmap(
-            BitmapFactory.decodeResource(resources, R.mipmap.ic_user_location)))*/
-        mMap.addMarker(markerOptions)
-    }*/
-
-
-    private fun getAddress(latLng: LatLng): String {
-        // 1
-        val geocoder = Geocoder(this)
-        val addresses: List<Address>?
-        val address: Address
-        var addressText = ""
-
-        try {
-            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            if (null != addresses && addresses.isNotEmpty()) {
-                address = addresses[0]
-                for (i in 0 until address.maxAddressLineIndex) {
-                    addressText += if (i == 0) address.getAddressLine(i) else "\n" + address.getAddressLine(
-                        i
-                    )
-                }
-            }
-        } catch (e: IOException) {
-            Log.e("MapsActivity", e.localizedMessage)
-        }
-
-        return addressText
-    }
-
-
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -252,7 +197,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-
     private fun fetchJson() {
         val url =
             "https://services1.arcgis.com/sswNXkUiRoWtrx0t/arcgis/rest/services/HSL_pysakit_kevat2018/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json"
@@ -282,72 +226,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     addMarkers2(stop3)
                     addMarkers2(stop4)
                 }
-
-                //callWebService(stop)
             }
 
             override fun onFailure(call: Call, e: IOException) {
                 println("Failed")
             }
         })
-    }
-
-    fun callWebService(stops: Stops) {
-
-        // RETROFIT BUILDER
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.digitransit.fi/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        val service = retrofit.create(HslApi::class.java)
-
-        // for (i in stops.features) {}
-        val stopPost = StopPost().query.toGraphQueryString()
-
-        val call = service.sentStopData(stopPost)
-
-        call.enqueue(object : retrofit2.Callback<String> {
-            override fun onResponse(
-                call: retrofit2.Call<String>,
-                response: retrofit2.Response<String>
-            ) {
-                val res = response.body().toString()
-                val gson = GsonBuilder().create()
-                val stop2 = gson.fromJson(res, Stops2::class.java)
-                println("HELLLOOOO")
-                runOnUiThread() {
-                    addMarkers2(stop2)
-                }
-            }
-
-            override fun onFailure(call: retrofit2.Call<String>, t: Throwable) {
-                println("failed")
-            }
-        })
-        // Data send
-/*
-        val call: retrofit2.Call<Stops2> = service.sentStopData("stops {\ngtfsId\nname\nlat\nlon\nzoneId\n  }")
-
-        call.enqueue(object : retrofit2.Callback<Stops2> {
-            override fun onResponse(
-                call: retrofit2.Call<Stops2>,
-                response: retrofit2.Response<Stops2>?
-            ) {
-                val res = response?.body().toString()
-                val gson = GsonBuilder().create()
-                val stop2 = gson.fromJson(res, Stops2::class.java)
-
-                runOnUiThread(){
-                    addMarkers2(stop2)
-                }
-            }
-
-            override fun onFailure(call: retrofit2.Call<Stops2>, t: Throwable) {
-                println("failed")
-            }
-        })*/
     }
 
     fun addMarkers(stop: Stops) {
