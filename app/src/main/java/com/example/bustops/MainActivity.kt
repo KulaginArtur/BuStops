@@ -21,12 +21,15 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.*
+import okhttp3.internal.wait
 import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    lateinit var arFragment: ArFragment
-    lateinit var settingsFragment: SettingsFragment
+    private lateinit var arFragment: ArFragment
+    private lateinit var settingsFragment: SettingsFragment
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var lastLocation: Location
@@ -61,9 +64,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
                         .commit()
                 }
-
             }
-
             true
         }
 
@@ -87,6 +88,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         createLocationRequest()
+
+
+    }
+
+    override fun onMapReady(googleMap: GoogleMap) {
+        mMap = googleMap
+        setUpMap()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -109,11 +117,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         if (!locationUpdateState) {
             startLocationUpdates()
         }
-    }
-
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-        setUpMap()
     }
 
     private fun setUpMap() {
@@ -143,6 +146,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 16f))
             }
         }
+
     }
 
     private fun startLocationUpdates() {
@@ -198,6 +202,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun fetchJson() {
+
         val url =
             "https://services1.arcgis.com/sswNXkUiRoWtrx0t/arcgis/rest/services/HSL_pysakit_kevat2018/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json"
 
@@ -215,16 +220,28 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 val gson = GsonBuilder().create()
                 val stop = gson.fromJson(body, Stops2::class.java)
 
-                val stop1  = Stops2( "Leiritie", 60.258942,24.846895)
-                val stop2  = Stops2( "Leiritie",  60.25919,24.84605)
-                val stop3  = Stops2( "Honkasuo", 60.258935,24.843145)
-                val stop4  = Stops2( "Raappavuorentie", 60.25945,24.84224)
+                val jsonLeir1: String = applicationContext.assets.open("leir1.json").bufferedReader().use { it.readText() }
+                val jsonLeir2: String = applicationContext.assets.open("leir2.json").bufferedReader().use { it.readText() }
+                val jsonHonk: String = applicationContext.assets.open("honk.json").bufferedReader().use { it.readText() }
+                val jsonRaap: String = applicationContext.assets.open("raap.json").bufferedReader().use { it.readText() }
 
-                runOnUiThread(){
-                    addMarkers2(stop1)
-                    addMarkers2(stop2)
-                    addMarkers2(stop3)
-                    addMarkers2(stop4)
+                val gson2 = GsonBuilder().create()
+                val routesLeir1 = gson2.fromJson(jsonLeir1, TimeT::class.java)
+                val routesLeir2 = gson2.fromJson(jsonLeir2, TimeT::class.java)
+                val routesHonk = gson2.fromJson(jsonHonk, TimeT::class.java)
+                val routesRaap = gson2.fromJson(jsonRaap, TimeT::class.java)
+
+                val stop1 = Stops("Leiritie",        4150201, "V1501", routesLeir1, 60.258942, 24.846895)
+                val stop2 = Stops("Leiritie",        4150296, "V1596", routesLeir2, 60.25919, 24.84605)
+                val stop3 = Stops("Honkasuo",        4150269, "V1569", routesHonk, 60.258935, 24.843145)
+                val stop4 = Stops("Raappavuorentie", 4150202, "V1502", routesRaap, 60.25945, 24.84224)
+
+                runOnUiThread {
+                    addMarkersHSL(stop)
+                    addMarkersLoc(stop1)
+                    addMarkersLoc(stop2)
+                    addMarkersLoc(stop3)
+                    addMarkersLoc(stop4)
                 }
             }
 
@@ -234,42 +251,83 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
-    fun addMarkers(stop: Stops) {
+    fun addMarkersHSL(stop: Stops2) {
+        mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
         for (i in stop.features) {
             if (i.attributes.REI_VOIM == 1 && i.attributes.AIK_VOIM == 1) {
-                println("found name: ${i.attributes.NIMI1}")
                 val loc = LatLng(i.geometry.x, i.geometry.y)
                 mMap.addMarker(
-                    MarkerOptions().position(loc).title(i.attributes.SOLMUTUNNU).snippet(
-                        i.attributes.NIMI1
-                    )
+                    MarkerOptions().position(loc).title(i.attributes.SOLMUTUNNU).snippet(i.attributes.NIMI1)
                 )
             }
         }
     }
 
-    fun addMarkers2(stop: Stops2) {
+    private fun addMarkersLoc(stop: Stops) {
+
+        val current = LocalDateTime.now()
+        val hour = DateTimeFormatter.ofPattern("HH")
+        val mint = DateTimeFormatter.ofPattern("mm")
+        var formattedH = current.format(hour).toInt()
+        var formattedM = current.format(mint).toInt()
+
+        val routes = stop.timeT.routes
         val loc = LatLng(stop.x, stop.y)
+
+        // Using Custom Info Window
+        mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
+        var count = 0
+        var snippetText = ""
+
+        do {
+            for (i in routes) {
+                val diff = i.min - formattedM
+                if (i.h == formattedH && i.min >= formattedM) {
+                    snippetText += diff.toString() + "min" + "  " + i.route + "\n"
+                    count += 1
+                }
+            }
+            if (count <= 4) {
+                formattedH += 1
+                formattedM -= 60
+                if (formattedH == 24) {
+                    formattedH = 10
+                }
+            }
+        } while (snippetText.length < 50)
+
         mMap.addMarker(
-            MarkerOptions().position(loc).title(stop.NIMI1)
+            MarkerOptions().position(loc).title(stop.NIMI1 + "  200m").snippet(snippetText)
         )
     }
-
-
-    class Stops(val features: List<Stop>)
-    class Stop(val attributes: Attributes, val geometry: Geometry)
-    class Attributes(
-        val SOLMUTUNNU: String,
-        val NIMI1: String,
-        val REI_VOIM: Int,
-        val AIK_VOIM: Int
-    )
-
-    class Geometry(val x: Double, val y: Double)
-
-    class Stops2(
-        val NIMI1: String,
-        val x: Double,
-        val y: Double
-    )
 }
+
+class Stops2(val features: List<Stop>)
+class Stop(val attributes: Attributes, val geometry: Geometry)
+class Attributes(
+    val SOLMUTUNNU: String,
+    val NIMI1: String,
+    val REI_VOIM: Int,
+    val AIK_VOIM: Int
+)
+
+class Geometry(val x: Double, val y: Double)
+
+class Stops(
+    val NIMI1: String,
+    val SOLMU: Int,
+    val LYHTY: String,
+    val timeT: TimeT,
+    val x: Double,
+    val y: Double
+)
+
+class TimeT(val routes: List<Json>)
+
+class Json(
+    val id: String,
+    val route: String,
+    val h: Int,
+    val min: Int
+)
+
