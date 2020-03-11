@@ -21,7 +21,6 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
 import okhttp3.*
-import okhttp3.internal.wait
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -220,10 +219,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 val gson = GsonBuilder().create()
                 val stop = gson.fromJson(body, Stops2::class.java)
 
-                val jsonLeir1: String = applicationContext.assets.open("leir1.json").bufferedReader().use { it.readText() }
-                val jsonLeir2: String = applicationContext.assets.open("leir2.json").bufferedReader().use { it.readText() }
-                val jsonHonk: String = applicationContext.assets.open("honk.json").bufferedReader().use { it.readText() }
-                val jsonRaap: String = applicationContext.assets.open("raap.json").bufferedReader().use { it.readText() }
+                val jsonLeir1:  String = applicationContext.assets.open("leir1.json").bufferedReader().use { it.readText() }
+                val jsonLeir2:  String = applicationContext.assets.open("leir2.json").bufferedReader().use { it.readText() }
+                val jsonHonk:   String = applicationContext.assets.open("honk.json" ).bufferedReader().use { it.readText() }
+                val jsonRaap:   String = applicationContext.assets.open("raap.json" ).bufferedReader().use { it.readText() }
 
                 val gson2 = GsonBuilder().create()
                 val routesLeir1 = gson2.fromJson(jsonLeir1, TimeT::class.java)
@@ -231,10 +230,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 val routesHonk = gson2.fromJson(jsonHonk, TimeT::class.java)
                 val routesRaap = gson2.fromJson(jsonRaap, TimeT::class.java)
 
-                val stop1 = Stops("Leiritie",        4150201, "V1501", routesLeir1, 60.258942, 24.846895)
-                val stop2 = Stops("Leiritie",        4150296, "V1596", routesLeir2, 60.25919, 24.84605)
-                val stop3 = Stops("Honkasuo",        4150269, "V1569", routesHonk, 60.258935, 24.843145)
-                val stop4 = Stops("Raappavuorentie", 4150202, "V1502", routesRaap, 60.25945, 24.84224)
+                val stop1 = Stops("Leiritie",         routesLeir1, 60.258942, 24.846895)
+                val stop2 = Stops("Leiritie",         routesLeir2, 60.25919 , 24.84605 )
+                val stop3 = Stops("Honkasuo",         routesHonk , 60.258935, 24.843145)
+                val stop4 = Stops("Raappavuorentie",  routesRaap , 60.25945 , 24.84224 )
 
                 runOnUiThread {
                     addMarkersHSL(stop)
@@ -254,12 +253,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     fun addMarkersHSL(stop: Stops2) {
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
         for (i in stop.features) {
-            if (i.attributes.REI_VOIM == 1 && i.attributes.AIK_VOIM == 1) {
+
                 val loc = LatLng(i.geometry.x, i.geometry.y)
                 mMap.addMarker(
                     MarkerOptions().position(loc).title(i.attributes.SOLMUTUNNU).snippet(i.attributes.NIMI1)
                 )
-            }
+
         }
     }
 
@@ -306,17 +305,13 @@ class Stops2(val features: List<Stop>)
 class Stop(val attributes: Attributes, val geometry: Geometry)
 class Attributes(
     val SOLMUTUNNU: String,
-    val NIMI1: String,
-    val REI_VOIM: Int,
-    val AIK_VOIM: Int
+    val NIMI1: String
 )
 
 class Geometry(val x: Double, val y: Double)
 
 class Stops(
     val NIMI1: String,
-    val SOLMU: Int,
-    val LYHTY: String,
     val timeT: TimeT,
     val x: Double,
     val y: Double
@@ -325,7 +320,6 @@ class Stops(
 class TimeT(val routes: List<Json>)
 
 class Json(
-    val id: String,
     val route: String,
     val h: Int,
     val min: Int
