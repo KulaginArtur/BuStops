@@ -1,10 +1,10 @@
 package com.example.bustops
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -12,28 +12,24 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentTransaction
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Marker
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import kotlinx.android.synthetic.main.activity_main.*
-import okhttp3.*
-import java.io.IOException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class MainActivity : AppCompatActivity() {
 
     lateinit var  arFragment : ArFragment
-    var  settingsFragment = SettingsFragment()
-    lateinit var homeFragment : HomeFragment
+    lateinit var fragment: com.google.ar.sceneform.ux.ArFragment
+    lateinit var  settingsFragment : SettingsFragment
+    lateinit var  homeFragment : HomeFragment
 
-    private lateinit var mMap: GoogleMap
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var lastLocation: Location
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
     private var locationUpdateState = false
+
 
     companion object {
         const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -44,19 +40,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
         homeFragment = HomeFragment(this)
         supportFragmentManager
             .beginTransaction()
             .replace(R.id.frame_layout, homeFragment)
             .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
             .commit()
-
+        //loadData()
         navListener()
         setUpPermissions()
-        //fetchJson()
 
-       // supportFragmentManager.beginTransaction().add(R.id.home, homeFragment).commit()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         locationCallback = object : LocationCallback() {
@@ -67,17 +60,40 @@ class MainActivity : AppCompatActivity() {
                 Log.d("Locationupdate", "still alive?")
                 //addMarkers(p0.lastLocation)//LatLng(lastLocation.latitude, lastLocation.longitude))
                 Log.d("Locationupdate", "why place marker is no called?")
-
             }
         }
         createLocationRequest()
+    }
+
+    fun saveData(list: MutableList<Marker>) {
+        val string = "shared preferences"
+        val sharedPreference = MainActivity().getSharedPreferences(string, MODE_PRIVATE) ?: return
+        val editor = sharedPreference.edit()
+
+        fun set(key:String, value:String?) {
+            editor.putString(key, value).apply()
+        }
+        fun <T> setList(key:String, list:List<T>) {
+            val gson = GsonBuilder().create()
+            val json = gson.toJson(list)
+            set(key, json)
+        }
+        setList("Markers", list)
+    }
+
+    private fun loadData() {
+        val sharedPreference = getSharedPreferences("shared preferences", Context.MODE_PRIVATE)
+        val gson = GsonBuilder().create()
+        val json = sharedPreference.getString("Markers", null)
+        val type = object: TypeToken<ArrayList<Marker>>() {}.type
+        settingsFragment.markers = gson.fromJson(json,type)
+
     }
 
     private fun navListener() {
         btm_nav.setOnNavigationItemSelectedListener { item ->
         when (item.itemId) {
             R.id.home -> {
-                Log.d("FRAG", "AR")
                 homeFragment = HomeFragment(this)
                 supportFragmentManager
                     .beginTransaction()
@@ -88,19 +104,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.ar -> {
-                Log.d("FRAG", "AR")
                 arFragment = ArFragment()
                 supportFragmentManager
                     .beginTransaction()
+                    .addToBackStack(arFragment.toString())
                     .replace(R.id.frame_layout, arFragment)
                     .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
                     .commit()
                 return@setOnNavigationItemSelectedListener true
             }
             R.id.settings -> {
-                settingsFragment = SettingsFragment()
+                settingsFragment = SettingsFragment(this)
                 supportFragmentManager
                     .beginTransaction()
+                    .addToBackStack(homeFragment.toString())
                     .replace(R.id.frame_layout, settingsFragment)
                     .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
                     .commit()
@@ -197,103 +214,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-/*
-    fun fetchJson() {
-
-        val url =
-            "https://services1.arcgis.com/sswNXkUiRoWtrx0t/arcgis/rest/services/HSL_pysakit_kevat2018/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json"
-
-        val request = Request
-            .Builder()
-            .url(url)
-            .build()
-
-        val client = OkHttpClient()
-        client.newCall(request).enqueue(object : Callback {
-
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string()
-                println(body)
-                val gson = GsonBuilder().create()
-                val stop = gson.fromJson(body, Stops2::class.java)
-
-                val jsonLeir1:  String = applicationContext.assets.open("leir1.json").bufferedReader().use { it.readText() }
-                val jsonLeir2:  String = applicationContext.assets.open("leir2.json").bufferedReader().use { it.readText() }
-                val jsonHonk:   String = applicationContext.assets.open("honk.json" ).bufferedReader().use { it.readText() }
-                val jsonRaap:   String = applicationContext.assets.open("raap.json" ).bufferedReader().use { it.readText() }
-
-                val routesLeir1 = gson.fromJson(jsonLeir1, TimeT::class.java)
-                val routesLeir2 = gson.fromJson(jsonLeir2, TimeT::class.java)
-                val routesHonk = gson.fromJson(jsonHonk, TimeT::class.java)
-                val routesRaap = gson.fromJson(jsonRaap, TimeT::class.java)
-
-                val stop1 = Stops("Leiritie",         routesLeir1, 60.258942, 24.846895)
-                val stop2 = Stops("Leiritie",         routesLeir2, 60.25919 , 24.84605 )
-                val stop3 = Stops("Honkasuo",         routesHonk , 60.258935, 24.843145)
-                val stop4 = Stops("Raappavuorentie",  routesRaap , 60.25945 , 24.84224 )
-
-                runOnUiThread {
-                    addMarkersHSL(stop)
-                    addMarkersLoc(stop1)
-                    addMarkersLoc(stop2)
-                    addMarkersLoc(stop3)
-                    addMarkersLoc(stop4)
-                }
-            }
-
-            override fun onFailure(call: Call, e: IOException) {
-                println("Failed")
-            }
-        })
-    }
-
-    fun addMarkersHSL(stop: Stops2) {
-        mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
-        for (i in stop.features) {
-
-                val loc = LatLng(i.geometry.y, i.geometry.x)
-                mMap.addMarker(
-                    MarkerOptions().position(loc).title(i.attributes.SOLMUTUNNU).snippet(i.attributes.NIMI1)
-                )
-
-        }
-    }
-
-     fun addMarkersLoc(stop: Stops) {
-
-        val current = LocalDateTime.now()
-        val hour = DateTimeFormatter.ofPattern("HH")
-        val mint = DateTimeFormatter.ofPattern("mm")
-        var formattedH = current.format(hour).toInt()
-        var formattedM = current.format(mint).toInt()
-
-        val routes = stop.timeT.routes
-        val loc = LatLng(stop.x, stop.y)
-
-        // Using Custom Info Window
-        mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(this))
-        var count = 0
-        var snippetText = ""
-
-        do {
-            for (i in routes) {
-                val diff = i.min - formattedM
-                if (i.h == formattedH && i.min >= formattedM) {
-                    snippetText += diff.toString() + "min" + "  " + i.route + "\n"
-                    count += 1
-                }
-            }
-            if (count <= 4) {
-                formattedH += 1
-                formattedM -= 60
-                if (formattedH == 24) {
-                    formattedH = 10
-                }
-            }
-        } while (snippetText.length < 50)
-
-        mMap.addMarker(
-            MarkerOptions().position(loc).title(stop.NIMI1 + "  200m").snippet(snippetText)
-        )
-    }*/
 }
