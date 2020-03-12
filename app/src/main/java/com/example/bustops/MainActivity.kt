@@ -12,21 +12,14 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentTransaction
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
-import okhttp3.*
-import java.io.IOException
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MainActivity : AppCompatActivity() {
 
-    lateinit var arFragment: ArFragment
-    lateinit var settingsFragment: SettingsFragment
+    lateinit var  arFragment : ArFragment
+    var  settingsFragment = SettingsFragment()
+    lateinit var homeFragment : HomeFragment
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var lastLocation: Location
@@ -35,44 +28,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private var locationUpdateState = false
 
     companion object {
-        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
-        private const val REQUEST_CHECK_SETTINGS = 3
+        const val LOCATION_PERMISSION_REQUEST_CODE = 1
+        const val REQUEST_CHECK_SETTINGS = 3
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        btm_nav.setOnNavigationItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.ar -> {
-                    arFragment = ArFragment()
-                    supportFragmentManager
-                        .beginTransaction()
-                        .replace(R.id.frame_layout, arFragment)
-                        .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                        .commit()
-                }
-                R.id.settings -> {
-                    settingsFragment = SettingsFragment()
-                    supportFragmentManager
-                        .beginTransaction()
-                        .replace(R.id.frame_layout, settingsFragment)
-                        .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                        .commit()
-                }
+        homeFragment = HomeFragment(this)
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.frame_layout, homeFragment)
+            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+            .commit()
 
-            }
-
-            true
-        }
-
-        fetchJson()
-
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
-
+        navListener()
+        setUpPermissions()
+       // supportFragmentManager.beginTransaction().add(R.id.home, homeFragment).commit()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         locationCallback = object : LocationCallback() {
@@ -87,6 +60,44 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         createLocationRequest()
+    }
+
+    private fun navListener() {
+        btm_nav.setOnNavigationItemSelectedListener { item ->
+        when (item.itemId) {
+            R.id.home -> {
+                Log.d("FRAG", "AR")
+                homeFragment = HomeFragment(this)
+                supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.frame_layout, homeFragment)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit()
+                return@setOnNavigationItemSelectedListener true
+            }
+
+            R.id.ar -> {
+                Log.d("FRAG", "AR")
+                arFragment = ArFragment()
+                supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.frame_layout, arFragment)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit()
+                return@setOnNavigationItemSelectedListener true
+            }
+            R.id.settings -> {
+                settingsFragment = SettingsFragment()
+                supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.frame_layout, settingsFragment)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit()
+                return@setOnNavigationItemSelectedListener true
+            }
+        }
+        false
+    }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -111,12 +122,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
+    /*override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         setUpMap()
-    }
 
-    private fun setUpMap() {
+    }*/
+
+    private fun setUpPermissions() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -129,8 +141,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             )
             return
         }
-
-        mMap.isMyLocationEnabled = true
+    }
+       /* mMap.isMyLocationEnabled = true
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         mMap.isBuildingsEnabled = true
 
@@ -143,7 +155,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 16f))
             }
         }
-    }
+    }*/
 
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
@@ -186,16 +198,34 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 try {
                     // Show the dialog by calling startResolutionForResult(),
                     // and check the result in onActivityResult().
-                    e.startResolutionForResult(
-                        this@MainActivity,
-                        REQUEST_CHECK_SETTINGS
-                    )
+                    e.startResolutionForResult(this, REQUEST_CHECK_SETTINGS)
                 } catch (sendEx: IntentSender.SendIntentException) {
                     // Catches if there's any errors and ignores it
                 }
             }
         }
     }
+/*
+    private fun distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+
+        /*Haversine algorithm to calculate distance */
+
+        val dlon = Math.toRadians(lon2 - lon1)
+        val dlat = Math.toRadians(lat2 - lat1)
+        val a = (Math.sin(dlat / 2) * Math.sin(dlat / 2))
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dlat / 2) * Math.sin(dlon/ 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+        Log.d("MATH", "MAth calc")
+
+        // Radius of earth in meters
+        val earthRadiusInM = 6371*100
+
+        // calculate the result
+        return c * earthRadiusInM
+    }
+
+
+
 
     private fun fetchJson() {
         val url =
@@ -250,8 +280,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     fun addMarkers2(stop: Stops2) {
         val loc = LatLng(stop.x, stop.y)
+
+        // This function calculates the distance
+        var calcDistance = distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y)
         mMap.addMarker(
-            MarkerOptions().position(loc).title(stop.NIMI1)
+            MarkerOptions().position(loc).title(stop.NIMI1).snippet("Distance: ${calcDistance.toShort()}m")
         )
     }
 
@@ -271,5 +304,5 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val NIMI1: String,
         val x: Double,
         val y: Double
-    )
+    ) */
 }
