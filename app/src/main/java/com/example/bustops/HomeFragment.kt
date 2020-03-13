@@ -160,7 +160,6 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
                     addMarkersLoc(leiri2)
                     addMarkersLoc(honk)
                     addMarkersLoc(raap)
-
                 }
             }
 
@@ -185,6 +184,7 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
 
     private fun addMarkersLoc(stop: Stops) { // Adding local stops
 
+        // Getting and formatting current time
         val current= LocalDateTime.now()
         val hour= DateTimeFormatter.ofPattern("HH")
         val mint= DateTimeFormatter.ofPattern("mm")
@@ -193,13 +193,15 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
 
         val routes = stop.timeT.routes
 
+        // Location of a stop
         val loc = LatLng(stop.x, stop.y)
 
         // Using Custom Info Window
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         var count = 0
         var snippetText = ""
-            // Do while there is 5 rows of routes
+
+        // Do while there is 5 rows of routes
         do {
             for (i in routes) {
                 val diff = i.min - formattedM // Getting the time difference

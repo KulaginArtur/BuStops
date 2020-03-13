@@ -20,11 +20,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity() {
 
     lateinit var  arFragment : ArFragment
-    lateinit var  fragment: com.google.ar.sceneform.ux.ArFragment
     lateinit var  favoritesFragment : FavoritesFragment
     lateinit var  homeFragment : HomeFragment
-
-
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
@@ -65,14 +62,16 @@ class MainActivity : AppCompatActivity() {
         createLocationRequest()
     }
 
-    fun saveData(list: MutableList<Marker>) {
-        val string = "shared preferences"
-        val sharedPreference = MainActivity().getSharedPreferences(string, MODE_PRIVATE) ?: return
-        val editor = sharedPreference.edit()
 
+    // Trying To save list to shared preferences
+    fun saveData(list: MutableList<Marker>) {
+        val sharedPreference = MainActivity().getSharedPreferences("shared preferences", MODE_PRIVATE) ?: return
+        val editor = sharedPreference.edit()
         fun set(key:String, value:String?) {
-            editor.putString(key, value).apply()
+            editor.putString(key, value)
+                .apply()
         }
+        // Makin list into Json string
         fun <T> setList(key:String, list:List<T>) {
             val gson = GsonBuilder().create()
             val json = gson.toJson(list)
@@ -81,15 +80,16 @@ class MainActivity : AppCompatActivity() {
         setList("Markers", list)
     }
 
+    // Getting data from shared preferences
     private fun loadData() {
         val sharedPreference = getSharedPreferences("shared preferences", Context.MODE_PRIVATE)
         val gson = GsonBuilder().create()
         val json = sharedPreference.getString("Markers", null)
         val type = object: TypeToken<ArrayList<Marker>>() {}.type
         favoritesFragment.markers = gson.fromJson(json,type)
-
     }
 
+    // Navigation by tab bar at the bottom
     private fun navListener() {
         btm_nav.setOnNavigationItemSelectedListener { item ->
         when (item.itemId) {
@@ -102,7 +102,6 @@ class MainActivity : AppCompatActivity() {
                     .commit()
                 return@setOnNavigationItemSelectedListener true
             }
-
             R.id.ar -> {
                 arFragment = ArFragment()
                 supportFragmentManager
