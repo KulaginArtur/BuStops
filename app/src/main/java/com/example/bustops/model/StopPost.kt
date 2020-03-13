@@ -2,6 +2,8 @@ package com.example.bustops.model
 
 import com.taskworld.kraph.Kraph
 
+
+// Querry to HSL DigiTransit https://digitransit.fi
 class StopPost(
      val query: Kraph = Kraph{
         query {

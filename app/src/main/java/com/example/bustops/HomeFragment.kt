@@ -3,14 +3,19 @@ package com.example.bustops
 import android.content.Context
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.google.android.gms.location.*
-import com.google.android.gms.maps.*
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.gson.GsonBuilder
 import okhttp3.*
@@ -22,17 +27,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
+class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
+    GoogleMap.OnInfoWindowClickListener {
 
-    var mainActivity = MainActivity
     private lateinit var mMap: GoogleMap
     private var cntx = context
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var lastLocation: Location
-    var currentl = LatLng(60.2585857, 24.8433926)
-    /*private lateinit var locationCallback: LocationCallback
-    private lateinit var locationRequest: LocationRequest
-    private var locationUpdateState = false */
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,7 +46,6 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-
         return view
     }
 
@@ -54,8 +54,6 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(cntx)
         mapLocation()
         fetchJson()
-
-
     }
 
     // This method is called when map is ready to be used
@@ -64,9 +62,14 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         mMap.isMyLocationEnabled = true
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         mMap.isBuildingsEnabled = true
-        /*mMap.addMarker(
-            MarkerOptions().position(currentl).title("MOIKKA")
-        )*/
+        mMap.setOnInfoWindowClickListener(this)
+    }
+
+    override fun onInfoWindowClick(marker: Marker) {
+        Toast.makeText(
+            cntx, "Added to Favorites",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun mapLocation() {
@@ -79,13 +82,11 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
                 lastLocation = location
                 val currentLatLng = LatLng(location.latitude, location.longitude)
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 16f))
-
             }
         }
     }
 
     /*This function uses Haversine algorithm to calculate distance */
-
 
     private fun distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
 
@@ -96,7 +97,7 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
             dlon / 2
         )
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        Log.d("MATH", "MAth calc")
+        //Log.d("MATH", "MAth calc")
 
         // Radius of earth in meters
         val earthRadiusInM = 6371000.0F
@@ -105,8 +106,8 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         return c * earthRadiusInM
     }
 
-
-    fun fetchJson() {
+    // Gets stops from HSL and 4 Locally next to school
+    private fun fetchJson() {
 
         val url =
             "https://services1.arcgis.com/sswNXkUiRoWtrx0t/arcgis/rest/services/HSL_pysakit_kevat2018/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json"
@@ -116,30 +117,45 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
             .url(url)
             .build()
 
-        val client = OkHttpClient()
+        val client = OkHttpClient() // Using OkHttp to make a call to the HSL URL
         client.newCall(request).enqueue(object : Callback {
 
             override fun onResponse(call: Call, response: Response) {
                 val body = response.body?.string()
-                println(body)
                 val gson = GsonBuilder().create()
-                val stop = gson.fromJson(body, Stops2::class.java)
+                val stop = gson.fromJson(body, Stops2::class.java) // Take JSON and make Java Class
 
-                val jsonLeir1:  String = cntx.applicationContext.assets.open("leir1.json").bufferedReader().use { it.readText() }
-                val jsonLeir2:  String = cntx.applicationContext.assets.open("leir2.json").bufferedReader().use { it.readText() }
-                val jsonHonk:   String = cntx.applicationContext.assets.open("honk.json" ).bufferedReader().use { it.readText() }
-                val jsonRaap:   String = cntx.applicationContext.assets.open("raap.json" ).bufferedReader().use { it.readText() }
 
-                val routesLeir1 = gson.fromJson(jsonLeir1, TimeT::class.java)
-                val routesLeir2 = gson.fromJson(jsonLeir2, TimeT::class.java)
-                val routesHonk = gson.fromJson(jsonHonk, TimeT::class.java)
-                val routesRaap = gson.fromJson(jsonRaap, TimeT::class.java)
+                // Finding local files where stop times are stored
+                val jsonLeir1: String =
+                    cntx.applicationContext.assets.open("leir1.json").bufferedReader()
+                        .use { it.readText() }
+                val jsonLeir2: String =
+                    cntx.applicationContext.assets.open("leir2.json").bufferedReader()
+                        .use { it.readText() }
+                val jsonHonk: String =
+                    cntx.applicationContext.assets.open("honk.json").bufferedReader()
+                        .use { it.readText() }
+                val jsonRaap: String =
+                    cntx.applicationContext.assets.open("raap.json").bufferedReader()
+                        .use { it.readText() }
 
-                val leiri1  = Stops("Leiritie",         routesLeir1, 60.258942, 24.846895)
-                val leiri2  = Stops("Leiritie",         routesLeir2, 60.25919 , 24.84605 )
-                val honk    = Stops("Honkasuo",         routesHonk , 60.258935, 24.843145)
-                val raap    = Stops("Raappavuorentie",  routesRaap , 60.25945 , 24.84224 )
 
+                // From JSON to Java Class TimeT to use in stops
+                val routesLeir1 = gson.fromJson(jsonLeir1,  TimeT::class.java)
+                val routesLeir2 = gson.fromJson(jsonLeir2,  TimeT::class.java)
+                val routesHonk  = gson.fromJson(jsonHonk,   TimeT::class.java)
+                val routesRaap  = gson.fromJson(jsonRaap,   TimeT::class.java)
+
+
+                //Making four stops next to the school with time tables from above
+                val leiri1  = Stops("Leiritie",        routesLeir1,  60.258942, 24.846895, true)
+                val leiri2  = Stops("Leiritie",        routesLeir2,  60.25919,  24.84605, false)
+                val honk    = Stops("Honkasuo",        routesHonk,   60.258935, 24.843145, true)
+                val raap    = Stops("Raappavuorentie", routesRaap,   60.25945,  24.84224, false)
+
+
+                // Used to display stops on the map
                 activity?.runOnUiThread {
                     addMarkersHSL(stop)
                     addMarkersLoc(leiri1)
@@ -147,7 +163,6 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
                     addMarkersLoc(honk)
                     addMarkersLoc(raap)
                 }
-
             }
 
             override fun onFailure(call: Call, e: IOException) {
@@ -156,7 +171,7 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         })
     }
 
-    fun addMarkersHSL(stop: Stops2) {
+    fun addMarkersHSL(stop: Stops2) { // Adding stops from HSL
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         for (i in stop.features) {
             if (i.attributes.REI_VOIM == 1 && i.attributes.AIK_VOIM == 1) {
@@ -169,46 +184,51 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun addMarkersLoc(stop: Stops) {
+    private fun addMarkersLoc(stop: Stops) { // Adding local stops
 
-        val current = LocalDateTime.now()
-        val hour = DateTimeFormatter.ofPattern("HH")
-        val mint = DateTimeFormatter.ofPattern("mm")
-        var formattedH = 12//current.format(hour).toInt()
-        var formattedM = 0//current.format(mint).toInt()
+        // Getting and formatting current time
+        val current= LocalDateTime.now()
+        val hour= DateTimeFormatter.ofPattern("HH")
+        val mint= DateTimeFormatter.ofPattern("mm")
+        var formattedH      = current.format(hour).toInt()
+        var formattedM      = current.format(mint).toInt()
 
         val routes = stop.timeT.routes
+
+        // Location of a stop
         val loc = LatLng(stop.x, stop.y)
 
         // Using Custom Info Window
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         var count = 0
         var snippetText = ""
-        val calcDistance = distance(currentl.latitude, currentl.longitude, stop.x, stop.y)
+        val calcDistance = distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y)
 
+        // Do while there is 5 rows of routes
         do {
             for (i in routes) {
-                val diff = i.min - formattedM
-                if (i.h == formattedH && i.min >= formattedM) {
+                val diff = i.min - formattedM // Getting the time difference
+                if (i.h == formattedH && i.min >= formattedM) { // Next routes and stop times
                     snippetText += diff.toString() + "min" + "  " + i.route + "\n"
                     count += 1
                 }
             }
-            if (count <= 4) {
+            if (count <= 4) {// if only 4 or less routes see first in next hour
                 formattedH += 1
                 formattedM -= 60
-                if (formattedH == 24) {
-                    formattedH = 10
+                if (formattedH == 24) { // if no busses today go to tomorow
+                    formattedH = 0
                 }
             }
         } while (snippetText.length < 50)
 
-        mMap.addMarker(
-            MarkerOptions().position(loc).title(stop.NIMI1 + " ${calcDistance.toInt()}m").snippet(snippetText)
+        mMap.addMarker( // add markers, title, distance and next routes
+            MarkerOptions().position(loc).title(stop.NIMI1 + " " + distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y).toInt() + "m").snippet(snippetText)
         )
     }
 }
 
+// Class for Fetched JSON from HSL  https://public-transport-hslhrt.opendata.arcgis.com/datasets/hsln-pysäkit
 class Stops2(val features: List<Stop>)
 class Stop(val attributes: Attributes, val geometry: Geometry)
 class Attributes(
@@ -220,11 +240,14 @@ class Attributes(
 
 class Geometry(val x: Double, val y: Double)
 
+// Class for local JSON Routes
+
 class Stops(
     val NIMI1: String,
     val timeT: TimeT,
     val x: Double,
-    val y: Double
+    val y: Double,
+    val selected: Boolean
 )
 
 class TimeT(val routes: List<Json>)
@@ -234,5 +257,4 @@ class Json(
     val h: Int,
     val min: Int
 )
-
 
