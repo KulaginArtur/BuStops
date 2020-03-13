@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:text="Favorites Coming Soon!"
+        android:text="@string/favorites_coming_soon"
         android:textSize="20pt"
         android:textStyle="bold"
         android:textColor="@color/whiteColor"/>

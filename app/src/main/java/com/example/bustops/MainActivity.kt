@@ -19,9 +19,9 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var  arFragment : ArFragment
-    lateinit var  favoritesFragment : FavoritesFragment
-    lateinit var  homeFragment : HomeFragment
+    private lateinit var  arFragment : ArFragment
+    private lateinit var  favoritesFragment : FavoritesFragment
+    private lateinit var  homeFragment : HomeFragment
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.ar -> {
                 Log.d("FRAG", "AR")
-                arFragment = ArFragment(this)
+                arFragment = ArFragment()
                 supportFragmentManager
                     .beginTransaction()
                     //.addToBackStack(arFragment.toString())

@@ -142,17 +142,17 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
 
 
                 // From JSON to Java Class TimeT to use in stops
-                val routesLeir1 = gson.fromJson(jsonLeir1,  TimeT::class.java)
-                val routesLeir2 = gson.fromJson(jsonLeir2,  TimeT::class.java)
-                val routesHonk  = gson.fromJson(jsonHonk,   TimeT::class.java)
-                val routesRaap  = gson.fromJson(jsonRaap,   TimeT::class.java)
+                val routesLeir1 = gson.fromJson(jsonLeir1, TimeT::class.java)
+                val routesLeir2 = gson.fromJson(jsonLeir2, TimeT::class.java)
+                val routesHonk = gson.fromJson(jsonHonk, TimeT::class.java)
+                val routesRaap = gson.fromJson(jsonRaap, TimeT::class.java)
 
 
                 //Making four stops next to the school with time tables from above
-                val leiri1  = Stops("Leiritie",        routesLeir1,  60.258942, 24.846895, true)
-                val leiri2  = Stops("Leiritie",        routesLeir2,  60.25919,  24.84605, false)
-                val honk    = Stops("Honkasuo",        routesHonk,   60.258935, 24.843145, true)
-                val raap    = Stops("Raappavuorentie", routesRaap,   60.25945,  24.84224, false)
+                val leiri1 = Stops("Leiritie", routesLeir1, 60.258942, 24.846895, true)
+                val leiri2 = Stops("Leiritie", routesLeir2, 60.25919, 24.84605, false)
+                val honk = Stops("Honkasuo", routesHonk, 60.258935, 24.843145, true)
+                val raap = Stops("Raappavuorentie", routesRaap, 60.25945, 24.84224, false)
 
 
                 // Used to display stops on the map
@@ -187,11 +187,11 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
     private fun addMarkersLoc(stop: Stops) { // Adding local stops
 
         // Getting and formatting current time
-        val current= LocalDateTime.now()
-        val hour= DateTimeFormatter.ofPattern("HH")
-        val mint= DateTimeFormatter.ofPattern("mm")
-        var formattedH      = current.format(hour).toInt()
-        var formattedM      = current.format(mint).toInt()
+        val current = LocalDateTime.now()
+        val hour = DateTimeFormatter.ofPattern("HH")
+        val mint = DateTimeFormatter.ofPattern("mm")
+        var formattedH = current.format(hour).toInt()
+        var formattedM = current.format(mint).toInt()
 
         val routes = stop.timeT.routes
 
@@ -201,22 +201,27 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
         // Using Custom Info Window
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         var count = 0
+        var calcDistance = distance(
+            lastLocation.latitude,
+            lastLocation.longitude,
+            stop.x,
+            stop.y
+        ).toInt()
         var snippetText = ""
-        val calcDistance = distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y)
 
         // Do while there is 5 rows of routes
         do {
             for (i in routes) {
-                val diff = i.min - formattedM // Getting the time difference
+                val diff = i.min - formattedM // Getting the time difference and
                 if (i.h == formattedH && i.min >= formattedM) { // Next routes and stop times
                     snippetText += diff.toString() + "min" + "  " + i.route + "\n"
                     count += 1
                 }
             }
-            if (count <= 4) {// if only 4 or less routes see first in next hour
+            if (count <= 4) {// if only 4 or less routes wound see first in next hour
                 formattedH += 1
                 formattedM -= 60
-                if (formattedH == 24) { // if no busses today go to tomorow
+                if (formattedH == 24) { // if no busses today go to tomorrow
                     formattedH = 0
                 }
             }
@@ -234,8 +239,8 @@ class Stop(val attributes: Attributes, val geometry: Geometry)
 class Attributes(
     val SOLMUTUNNU: String,
     val NIMI1: String,
-    val REI_VOIM : Int,
-    val AIK_VOIM : Int
+    val REI_VOIM: Int,
+    val AIK_VOIM: Int
 )
 
 class Geometry(val x: Double, val y: Double)
@@ -257,4 +262,3 @@ class Json(
     val h: Int,
     val min: Int
 )
-

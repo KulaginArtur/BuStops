@@ -1,6 +1,5 @@
 package com.example.bustops
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -16,15 +15,10 @@ import com.google.ar.sceneform.rendering.ViewRenderable
 import com.google.ar.sceneform.ux.ArFragment
 import com.google.ar.sceneform.ux.TransformableNode
 
-/**
- * A simple [Fragment] subclass.
- */
-class ArFragment(context: Context) : Fragment() {
+class ArFragment() : Fragment() {
 
     private var fragment: ArFragment? = null
     private var testRenderable: ViewRenderable? = null
-    // private var c = context
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,7 +30,7 @@ class ArFragment(context: Context) : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-       fragment = childFragmentManager.findFragmentById(R.id.sceneform_frag) as? ArFragment
+        fragment = childFragmentManager.findFragmentById(R.id.sceneform_frag) as? ArFragment
 
         //Building the XML file and rendering it to use
         val renderableFuture = ViewRenderable.builder()
@@ -45,7 +39,7 @@ class ArFragment(context: Context) : Fragment() {
         renderableFuture.thenAccept { testRenderable = it }
 
         // Setting up planes and anchor where the object(s) are placed
-        fragment?.setOnTapArPlaneListener { hitResult: HitResult?, plane: Plane?, motionEvent: MotionEvent? ->
+        fragment?.setOnTapArPlaneListener { hitResult: HitResult?, _: Plane?, _: MotionEvent? ->
             if (testRenderable == null) {
                 return@setOnTapArPlaneListener
             }
@@ -56,11 +50,11 @@ class ArFragment(context: Context) : Fragment() {
             viewNode.setParent(anchorNode)
             viewNode.renderable = testRenderable
             viewNode.select()
-            viewNode.setOnTapListener { hitTestRes: HitTestResult?, motionEv: MotionEvent? ->
+            viewNode.setOnTapListener { _: HitTestResult?, motionEv: MotionEvent? ->
                 Toast.makeText(context!!.applicationContext, "Ouch!!!!", Toast.LENGTH_LONG).show()
             }
 
         }
-        }
     }
+}
 

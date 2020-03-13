@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.Marker
 
 class CustomInfoWindowAdapter(mContext: Context) : GoogleMap.InfoWindowAdapter {
 
+
     @SuppressLint("InflateParams")
     private var mWindow: View =
         LayoutInflater.from(mContext).inflate(R.layout.custom_info_window, null)
