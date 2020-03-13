@@ -142,17 +142,17 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
 
 
                 // From JSON to Java Class TimeT to use in stops
-                val routesLeir1 = gson.fromJson(jsonLeir1,  TimeT::class.java)
-                val routesLeir2 = gson.fromJson(jsonLeir2,  TimeT::class.java)
-                val routesHonk  = gson.fromJson(jsonHonk,   TimeT::class.java)
-                val routesRaap  = gson.fromJson(jsonRaap,   TimeT::class.java)
+                val routesLeir1 = gson.fromJson(jsonLeir1, TimeT::class.java)
+                val routesLeir2 = gson.fromJson(jsonLeir2, TimeT::class.java)
+                val routesHonk = gson.fromJson(jsonHonk, TimeT::class.java)
+                val routesRaap = gson.fromJson(jsonRaap, TimeT::class.java)
 
 
                 //Making four stops next to the school with time tables from above
-                val leiri1  = Stops("Leiritie",        routesLeir1,  60.258942, 24.846895, true)
-                val leiri2  = Stops("Leiritie",        routesLeir2,  60.25919,  24.84605, false)
-                val honk    = Stops("Honkasuo",        routesHonk,   60.258935, 24.843145, true)
-                val raap    = Stops("Raappavuorentie", routesRaap,   60.25945,  24.84224, false)
+                val leiri1 = Stops("Leiritie", routesLeir1, 60.258942, 24.846895, true)
+                val leiri2 = Stops("Leiritie", routesLeir2, 60.25919, 24.84605, false)
+                val honk = Stops("Honkasuo", routesHonk, 60.258935, 24.843145, true)
+                val raap = Stops("Raappavuorentie", routesRaap, 60.25945, 24.84224, false)
 
 
                 // Used to display stops on the map
@@ -187,11 +187,11 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
     private fun addMarkersLoc(stop: Stops) { // Adding local stops
 
         // Getting and formatting current time
-        val current= LocalDateTime.now()
-        val hour= DateTimeFormatter.ofPattern("HH")
-        val mint= DateTimeFormatter.ofPattern("mm")
-        var formattedH      = current.format(hour).toInt()
-        var formattedM      = current.format(mint).toInt()
+        val current = LocalDateTime.now()
+        val hour = DateTimeFormatter.ofPattern("HH")
+        val mint = DateTimeFormatter.ofPattern("mm")
+        var formattedH = current.format(hour).toInt()
+        var formattedM = current.format(mint).toInt()
 
         val routes = stop.timeT.routes
 
@@ -202,7 +202,6 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         var count = 0
         var snippetText = ""
-        val calcDistance = distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y)
 
         // Do while there is 5 rows of routes
         do {
@@ -223,7 +222,14 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
         } while (snippetText.length < 50)
 
         mMap.addMarker( // add markers, title, distance and next routes
-            MarkerOptions().position(loc).title(stop.NIMI1 + " " + distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y).toInt() + "m").snippet(snippetText)
+            MarkerOptions().position(loc).title(
+                stop.NIMI1 + " " + distance(
+                    lastLocation.latitude,
+                    lastLocation.longitude,
+                    stop.x,
+                    stop.y
+                ).toInt() + "m"
+            ).snippet(snippetText)
         )
     }
 }
@@ -234,8 +240,8 @@ class Stop(val attributes: Attributes, val geometry: Geometry)
 class Attributes(
     val SOLMUTUNNU: String,
     val NIMI1: String,
-    val REI_VOIM : Int,
-    val AIK_VOIM : Int
+    val REI_VOIM: Int,
+    val AIK_VOIM: Int
 )
 
 class Geometry(val x: Double, val y: Double)
