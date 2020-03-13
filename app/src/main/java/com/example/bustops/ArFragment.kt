@@ -38,11 +38,13 @@ class ArFragment(context: Context) : Fragment() {
         super.onViewCreated(view, savedInstanceState)
        fragment = childFragmentManager.findFragmentById(R.id.sceneform_frag) as? ArFragment
 
+        //Building the XML file and rendering it to use
         val renderableFuture = ViewRenderable.builder()
             .setView(context, R.layout.rendtext)
             .build()
         renderableFuture.thenAccept { testRenderable = it }
 
+        // Setting up planes and anchor where the object(s) are placed
         fragment?.setOnTapArPlaneListener { hitResult: HitResult?, plane: Plane?, motionEvent: MotionEvent? ->
             if (testRenderable == null) {
                 return@setOnTapArPlaneListener
