@@ -28,9 +28,9 @@ class MainActivity : AppCompatActivity() {
     var  settingsFragment = SettingsFragment()
     lateinit var homeFragment : HomeFragment
 
-    private lateinit var mMap: GoogleMap
+   // private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var lastLocation: Location
+   // private lateinit var lastLocation: Location
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
     private var locationUpdateState = false
@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity() {
 
             R.id.ar -> {
                 Log.d("FRAG", "AR")
-                arFragment = ArFragment()
+                arFragment = ArFragment(this)
                 supportFragmentManager
                     .beginTransaction()
                     .replace(R.id.frame_layout, arFragment)

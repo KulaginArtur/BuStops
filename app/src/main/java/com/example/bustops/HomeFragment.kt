@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.MainThread
 import androidx.fragment.app.Fragment
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
@@ -18,6 +17,10 @@ import okhttp3.*
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
 
@@ -52,19 +55,24 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         mapLocation()
         fetchJson()
 
+
     }
 
+    // This method is called when map is ready to be used
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         mMap.isMyLocationEnabled = true
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         mMap.isBuildingsEnabled = true
-        //addMarkersHSL(stop)
-
+        /*mMap.addMarker(
+            MarkerOptions().position(currentl).title("MOIKKA")
+        )*/
     }
 
     private fun mapLocation() {
 
+        // Location listener listens to where your location is
+        // and places a marker on the map and zooms to your location
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             // Got last known location. In some rare situations this can be null.
             if (location != null) {
@@ -76,75 +84,27 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         }
     }
 
+    /*This function uses Haversine algorithm to calculate distance */
+
 
     private fun distance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
 
-        /*Haversine algorithm to calculate distance */
-
-        val dlon = Math.toRadians(lon2 - lon1)
-        val dlat = Math.toRadians(lat2 - lat1)
-        val a = (Math.sin(dlat / 2) * Math.sin(dlat / 2))
-        +Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dlat / 2) * Math.sin(
+        val dlon = Math.toRadians(lon2) - Math.toRadians(lon1)
+        val dlat = Math.toRadians(lat2) - Math.toRadians(lat1)
+        val a = (sin(dlat / 2) * sin(dlat / 2))
+        +cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dlat / 2) * sin(
             dlon / 2
         )
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
         Log.d("MATH", "MAth calc")
 
         // Radius of earth in meters
-        val earthRadiusInM = 6371 * 100
+        val earthRadiusInM = 6371000.0F
 
         // calculate the result
         return c * earthRadiusInM
     }
 
-    fun addMarkers2(stop: Stops3) {
-        val loc = LatLng(stop.x, stop.y)
-
-        // This function calculates the distance
-        val calcDistance = distance(currentl.latitude, currentl.longitude, stop.x, stop.y)
-        mMap.addMarker(
-            MarkerOptions().position(loc).title(stop.NIMI1)
-                .snippet("Distance: ${calcDistance.toShort()}m")
-        )
-    }
-
-    val stop1 =
-        Stops3("Leiritie", 60.258942, 24.846895)
-    val stop2 =
-        Stops3("Leiritie", 60.25919, 24.84605)
-    val stop3 =
-        Stops3("Honkasuo", 60.258935, 24.843145)
-    val stop4 =
-        Stops3("Raappavuorentie", 60.25945, 24.84224)
-
-    class Stops3(
-        val NIMI1: String,
-        val x: Double,
-        val y: Double
-    )
-    class Stops2(val features: List<Stop>)
-    class Stop(val attributes: Attributes, val geometry: Geometry)
-    class Attributes(
-        val SOLMUTUNNU: String,
-        val NIMI1: String
-    )
-
-    class Geometry(val x: Double, val y: Double)
-
-    class Stops(
-        val NIMI1: String,
-        val timeT: TimeT,
-        val x: Double,
-        val y: Double
-    )
-
-    class TimeT(val routes: List<Json>)
-
-    class Json(
-        val route: String,
-        val h: Int,
-        val min: Int
-    )
 
     fun fetchJson() {
 
@@ -181,6 +141,7 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
                 val raap    = Stops("Raappavuorentie",  routesRaap , 60.25945 , 24.84224 )
 
                 activity?.runOnUiThread {
+                    addMarkersHSL(stop)
                     addMarkersLoc(leiri1)
                     addMarkersLoc(leiri2)
                     addMarkersLoc(honk)
@@ -198,13 +159,13 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
     fun addMarkersHSL(stop: Stops2) {
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         for (i in stop.features) {
-
-            val loc = LatLng(i.geometry.y, i.geometry.x)
-            mMap.addMarker(
-                MarkerOptions().position(loc).title(i.attributes.SOLMUTUNNU)
-                    .snippet(i.attributes.NIMI1)
-            )
-
+            if (i.attributes.REI_VOIM == 1 && i.attributes.AIK_VOIM == 1) {
+                val loc = LatLng(i.geometry.y, i.geometry.x)
+                mMap.addMarker(
+                    MarkerOptions().position(loc).title(i.attributes.SOLMUTUNNU)
+                        .snippet(i.attributes.NIMI1)
+                )
+            }
         }
     }
 
@@ -213,8 +174,8 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         val current = LocalDateTime.now()
         val hour = DateTimeFormatter.ofPattern("HH")
         val mint = DateTimeFormatter.ofPattern("mm")
-        var formattedH = current.format(hour).toInt()
-        var formattedM = current.format(mint).toInt()
+        var formattedH = 12//current.format(hour).toInt()
+        var formattedM = 0//current.format(mint).toInt()
 
         val routes = stop.timeT.routes
         val loc = LatLng(stop.x, stop.y)
@@ -223,6 +184,7 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         mMap.setInfoWindowAdapter(CustomInfoWindowAdapter(cntx))
         var count = 0
         var snippetText = ""
+        val calcDistance = distance(currentl.latitude, currentl.longitude, stop.x, stop.y)
 
         do {
             for (i in routes) {
@@ -242,9 +204,35 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback {
         } while (snippetText.length < 50)
 
         mMap.addMarker(
-            MarkerOptions().position(loc).title(stop.NIMI1 + "  200m").snippet(snippetText)
+            MarkerOptions().position(loc).title(stop.NIMI1 + " ${calcDistance.toInt()}m").snippet(snippetText)
         )
     }
 }
+
+class Stops2(val features: List<Stop>)
+class Stop(val attributes: Attributes, val geometry: Geometry)
+class Attributes(
+    val SOLMUTUNNU: String,
+    val NIMI1: String,
+    val REI_VOIM : Int,
+    val AIK_VOIM : Int
+)
+
+class Geometry(val x: Double, val y: Double)
+
+class Stops(
+    val NIMI1: String,
+    val timeT: TimeT,
+    val x: Double,
+    val y: Double
+)
+
+class TimeT(val routes: List<Json>)
+
+class Json(
+    val route: String,
+    val h: Int,
+    val min: Int
+)
 
 
