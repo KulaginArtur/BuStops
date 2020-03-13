@@ -223,7 +223,7 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
         } while (snippetText.length < 50)
 
         mMap.addMarker( // add markers, title, distance and next routes
-            MarkerOptions().position(loc).title(stop.NIMI1 + " " + distance(lastLocation.latitude, lastLocation.longitude, stop.x, stop.y).toInt() + "m").snippet(snippetText)
+            MarkerOptions().position(loc).title(stop.NIMI1 + " " + calcDistance.toInt() + "m").snippet(snippetText)
         )
     }
 }

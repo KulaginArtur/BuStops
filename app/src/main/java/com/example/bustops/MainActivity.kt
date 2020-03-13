@@ -128,6 +128,8 @@ class MainActivity : AppCompatActivity() {
     }
     }
 
+    //Checks if you have location enabled, if you've enabled location in the settings,
+    // then it will update location
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CHECK_SETTINGS) {
@@ -150,6 +152,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //Checking permissions first
     private fun setUpPermissions() {
 
         if (ActivityCompat.checkSelfPermission(
@@ -166,6 +169,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Checks your location settings first, if location is enabled then it will
+    // update your location
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -203,10 +208,9 @@ class MainActivity : AppCompatActivity() {
         }
         task.addOnFailureListener { e ->
             if (e is ResolvableApiException) {
-                // Check your location settings first, if location is enabled
                 try {
                     // Show the dialog by calling startResolutionForResult(),
-                    // and check the result in onActivityResult().
+                    // and checks the result in onActivityResult().
                     e.startResolutionForResult(this, REQUEST_CHECK_SETTINGS)
                 } catch (sendEx: IntentSender.SendIntentException) {
                     // Catches if there's any errors and ignores it
