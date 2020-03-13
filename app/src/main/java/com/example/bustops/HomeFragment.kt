@@ -206,16 +206,16 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
         // Do while there is 5 rows of routes
         do {
             for (i in routes) {
-                val diff = i.min - formattedM // Getting the time difference
+                val diff = i.min - formattedM // Getting the time difference and
                 if (i.h == formattedH && i.min >= formattedM) { // Next routes and stop times
                     snippetText += diff.toString() + "min" + "  " + i.route + "\n"
                     count += 1
                 }
             }
-            if (count <= 4) {// if only 4 or less routes see first in next hour
+            if (count <= 4) {// if only 4 or less routes wound see first in next hour
                 formattedH += 1
                 formattedM -= 60
-                if (formattedH == 24) { // if no busses today go to tomorow
+                if (formattedH == 24) { // if no busses today go to tomorrow
                     formattedH = 0
                 }
             }
@@ -263,4 +263,3 @@ class Json(
     val h: Int,
     val min: Int
 )
-
