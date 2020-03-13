@@ -7,10 +7,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.google.android.gms.maps.model.Marker
-import kotlinx.android.synthetic.main.fragment_settings.*
+import kotlinx.android.synthetic.main.fragment_favorites.*
 
 
-class SettingsFragment(context: Context) : Fragment() {
+class FavoritesFragment(context: Context) : Fragment() {
 
     var markers =  mutableListOf<Marker>()
 
@@ -20,7 +20,7 @@ class SettingsFragment(context: Context) : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         checkSelected()
-        return inflater.inflate(R.layout.fragment_settings, container, false)
+        return inflater.inflate(R.layout.fragment_favorites, container, false)
     }
 
     private fun checkSelected () {

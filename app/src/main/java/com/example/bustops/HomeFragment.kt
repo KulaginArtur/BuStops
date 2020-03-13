@@ -34,7 +34,6 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
     private var cntx = context
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var lastLocation: Location
-    var currentl = LatLng(60.2585857, 24.8433926)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -189,10 +188,8 @@ class HomeFragment(context: Context) : Fragment(), OnMapReadyCallback,
         val current= LocalDateTime.now()
         val hour= DateTimeFormatter.ofPattern("HH")
         val mint= DateTimeFormatter.ofPattern("mm")
-        var formattedH       = current.format(hour).toInt()
-        var formattedM       = current.format(mint).toInt()
-
-
+        var formattedH      = current.format(hour).toInt()
+        var formattedM      = current.format(mint).toInt()
 
         val routes = stop.timeT.routes
 

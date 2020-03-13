@@ -20,8 +20,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity() {
 
     lateinit var  arFragment : ArFragment
-    lateinit var fragment: com.google.ar.sceneform.ux.ArFragment
-    lateinit var  settingsFragment : SettingsFragment
+    lateinit var  fragment: com.google.ar.sceneform.ux.ArFragment
+    lateinit var  favoritesFragment : FavoritesFragment
     lateinit var  homeFragment : HomeFragment
 
 
@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
         val gson = GsonBuilder().create()
         val json = sharedPreference.getString("Markers", null)
         val type = object: TypeToken<ArrayList<Marker>>() {}.type
-        settingsFragment.markers = gson.fromJson(json,type)
+        favoritesFragment.markers = gson.fromJson(json,type)
 
     }
 
@@ -113,12 +113,12 @@ class MainActivity : AppCompatActivity() {
                     .commit()
                 return@setOnNavigationItemSelectedListener true
             }
-            R.id.settings -> {
-                settingsFragment = SettingsFragment(this)
+            R.id.favorites -> {
+                favoritesFragment = FavoritesFragment(this)
                 supportFragmentManager
                     .beginTransaction()
                     .addToBackStack(homeFragment.toString())
-                    .replace(R.id.frame_layout, settingsFragment)
+                    .replace(R.id.frame_layout, favoritesFragment)
                     .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
                     .commit()
                 return@setOnNavigationItemSelectedListener true
